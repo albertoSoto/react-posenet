@@ -1,97 +1,44 @@
 import React from "react";
 import "./styles.css";
-// import * as tf from "@tensorflow/tfjs";
-import * as posenet from "@tensorflow-models/posenet";
-import {drawKeypoints, drawSkeleton} from "./utilities";
+
+import * as PoseDetector from '@tensorflow-models/pose-detection';
+import {BlazePose, VideoPlayback, drawPose, MoveNetLoader} from "react-tfjs-models";
 
 export default function App() {
-    const videoID = "videoElementId";
-    const videoRef = React.useRef(null);
+    // const videoID = "videoElementId";
+    // const videoRef = React.useRef(null);
     const canvasRef = React.useRef(null);
-
-    const detectWebcamFeed = async (posenet_model) => {
-        const domElement = document.getElementById(videoID);
-        if (
-            domElement &&
-            domElement.readyState === 4
-        ) {
-            // Get Video Properties
-            const video = domElement.src;
-            domElement.setAttribute('crossOrigin', 'anonymous');
-            const videoWidth = domElement.videoWidth;
-            const videoHeight = domElement.videoHeight;
-            // Set video width
-            if (videoRef.current){
-                videoRef.current.width = videoWidth;
-                videoRef.current.height = videoHeight;
-            }
-            // Make Estimation
-            // console.log("here")
-            // const pose = await posenet_model.estimateMultiplePoses(domElement);
-            const pose = await posenet_model.estimateSinglePose(domElement);
-            drawResult(pose, domElement, videoWidth, videoHeight, canvasRef);
-        }
+    const videoSource = "climbing.mp4";
+    const model = PoseDetector.SupportedModels.MoveNet;
+    const keypointIndices = PoseDetector.util.getKeypointIndexBySide(model);
+    const adjacentPairs = PoseDetector.util.getAdjacentPairs(model);
+    const setCanvas = (canvas) => {
+        canvasRef.current = canvas;
     };
-    const runPosenet = async () => {
-        const posenet_model = await posenet.load({
-            inputResolution: {width: 640, height: 480},
-            scale: 0.8
-        });
-        //
-        setInterval(() => {
-            detectWebcamFeed(posenet_model);
-        }, 100);
+    const onPoseEstimate = (pose) => {
+        const ctx = canvasRef.current.getContext('2d');
+        const canvas = canvasRef.current;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawPose(pose, keypointIndices, adjacentPairs, ctx);
     };
-    runPosenet();
-    const drawResult = (pose, video, videoWidth, videoHeight, canvas) => {
-        if(canvas && canvas.current){
-            const ctx = canvas.current.getContext("2d");
-            canvas.current.width = videoWidth;
-            canvas.current.height = videoHeight;
-            if (ctx){
-                drawKeypoints(pose["keypoints"], 0.6, ctx);
-                drawSkeleton(pose["keypoints"], 0.7, ctx);
-                // console.log("draw")
-            }
-        }
+    const style = {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9,
     };
     return (
-        <div className="App">
-            <header className="App-header">
-
-                <video controls autoPlay={true}
-                       id={videoID}
-                       ref={videoRef}
-                       src={"climbing.mp4"}
-                       style={{
-                           position: "absolute",
-                           marginLeft: "auto",
-                           marginRight: "auto",
-                           left: 0,
-                           right: 0,
-                           textAlign: "center",
-                           zindex: 9,
-                           width: 640,
-                           height: 480
-                       }}
-                >
-                    {/*<source src="climbing.mp4" type="video/mp4"/>*/}
-                </video>
-                <canvas
-                    ref={canvasRef}
-                    style={{
-                        position: "absolute",
-                        marginLeft: "auto",
-                        marginRight: "auto",
-                        left: 0,
-                        right: 0,
-                        textAlign: "center",
-                        zindex: 9,
-                        width: 640,
-                        height: 480
-                    }}
-                />
-            </header>
-        </div>
+        <VideoPlayback style={style} videoSource={videoSource}
+                       setCanvas={setCanvas} controlsEnabled={true}>
+            <BlazePose
+                backend='webgl'
+                runtime='tfjs'
+                type={PoseDetector.movenet.modelType.SINGLEPOSE_THUNDER}
+                maxPoses={1}
+                flipHorizontal={true}
+                loader={MoveNetLoader}
+                onPoseEstimate={onPoseEstimate}/>
+        </VideoPlayback>
     );
 }
