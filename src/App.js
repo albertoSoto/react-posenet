@@ -1,81 +1,44 @@
 import React from "react";
 import "./styles.css";
-// import * as tf from "@tensorflow/tfjs";
-import * as posenet from "@tensorflow-models/posenet";
-import Webcam from "react-webcam";
-import { drawKeypoints, drawSkeleton } from "./utilities";
-export default function App() {
-  const webcamRef = React.useRef(null);
-  const canvasRef = React.useRef(null);
 
-  const detectWebcamFeed = async (posenet_model) => {
-    if (
-      typeof webcamRef.current !== "undefined" &&
-      webcamRef.current !== null &&
-      webcamRef.current.video.readyState === 4
-    ) {
-      // Get Video Properties
-      const video = webcamRef.current.video;
-      const videoWidth = webcamRef.current.video.videoWidth;
-      const videoHeight = webcamRef.current.video.videoHeight;
-      // Set video width
-      webcamRef.current.video.width = videoWidth;
-      webcamRef.current.video.height = videoHeight;
-      // Make Estimation
-      const pose = await posenet_model.estimateSinglePose(video);
-      drawResult(pose, video, videoWidth, videoHeight, canvasRef);
-    }
-  };
-  const runPosenet = async () => {
-    const posenet_model = await posenet.load({
-      inputResolution: { width: 640, height: 480 },
-      scale: 0.8
-    });
-    //
-    setInterval(() => {
-      detectWebcamFeed(posenet_model);
-    }, 100);
-  };
-  runPosenet();
-  const drawResult = (pose, video, videoWidth, videoHeight, canvas) => {
-    const ctx = canvas.current.getContext("2d");
-    canvas.current.width = videoWidth;
-    canvas.current.height = videoHeight;
-    drawKeypoints(pose["keypoints"], 0.6, ctx);
-    drawSkeleton(pose["keypoints"], 0.7, ctx);
-  };
-  return (
-    <div className="App">
-      <header className="App-header">
-        <Webcam
-          ref={webcamRef}
-          style={{
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: 9,
-            width: 640,
-            height: 480
-          }}
-        />
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: 9,
-            width: 640,
-            height: 480
-          }}
-        />
-      </header>
-    </div>
-  );
+import * as PoseDetector from '@tensorflow-models/pose-detection';
+import {BlazePose, VideoPlayback, drawPose, MoveNetLoader} from "react-tfjs-models";
+
+export default function App() {
+    // const videoID = "videoElementId";
+    // const videoRef = React.useRef(null);
+    const canvasRef = React.useRef(null);
+    const videoSource = "climbing.mp4";
+    const model = PoseDetector.SupportedModels.MoveNet;
+    const keypointIndices = PoseDetector.util.getKeypointIndexBySide(model);
+    const adjacentPairs = PoseDetector.util.getAdjacentPairs(model);
+    const setCanvas = (canvas) => {
+        canvasRef.current = canvas;
+    };
+    const onPoseEstimate = (pose) => {
+        const ctx = canvasRef.current.getContext('2d');
+        const canvas = canvasRef.current;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawPose(pose, keypointIndices, adjacentPairs, ctx);
+    };
+    const style = {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9,
+    };
+    return (
+        <VideoPlayback style={style} videoSource={videoSource}
+                       setCanvas={setCanvas} controlsEnabled={true}>
+            <BlazePose
+                backend='webgl'
+                runtime='tfjs'
+                type={PoseDetector.movenet.modelType.SINGLEPOSE_THUNDER}
+                maxPoses={1}
+                flipHorizontal={true}
+                loader={MoveNetLoader}
+                onPoseEstimate={onPoseEstimate}/>
+        </VideoPlayback>
+    );
 }
