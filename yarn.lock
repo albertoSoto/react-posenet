@@ -8097,10 +8097,10 @@ react-scripts@5.0.1:
   optionalDependencies:
     fsevents "^2.3.2"
 
-react-tfjs-models@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/react-tfjs-models/-/react-tfjs-models-1.0.1.tgz#60692964f52c03bec5fceb0e1c313fa12445c867"
-  integrity sha512-teprZ1F/CeMfd4dXwQYVTfDaiFTehP8E6fL+jCLcQhFjcd/h5cllYDBBcVCkxF4soboqoaWVXzmd49txL6u0Sg==
+react-tfjs-models@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/react-tfjs-models/-/react-tfjs-models-1.1.2.tgz#788f6effc294c53391627580e501357889906d1b"
+  integrity sha512-YbsHUa7FJxQi2HDUp10aPFIne/7ATCF3zyvblgqse0Di/DPhmeHhi3A0rDAFjKN4nRyiUnZv27Xbbd5NoH0DMg==
   dependencies:
     "@mediapipe/pose" "^0.5.1675469404"
     "@react-three/drei" "^9.80.1"
